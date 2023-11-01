@@ -1,0 +1,166 @@
+import { Avatar, Button, Card, Col, Divider, List, message, Modal, Result, Row } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { useModel } from '@@/exports';
+import { ExclamationCircleOutlined } from '@ant-design/icons';
+import Search from 'antd/es/input/Search';
+import moment from 'moment';
+import {
+    deleteAiIntelligentUsingPOST,
+    listMyAiInformationByPageUsingPOST
+} from "@/services/sihaibi/aiIntelligentController";
+
+const XunFeiAiChatManage: React.FC = () => {
+  const [data, setData] = useState<API.AiIntelligent[]>();
+  const [total, setTotal] = useState<number>(0);
+
+  const initParams = {
+    current: 1,
+    pageSize: 5,
+    sortField: 'createTime',
+    sortOrder: 'DESC',
+  };
+
+  /**
+   * 查询参数
+   */
+  const [searchParams, setSearchParams] = useState<API.AiIntelligentQueryRequest>({
+    ...initParams,
+  });
+  /**
+   * 获取当前用户
+   */
+  const { initialState } = useModel('@@initialState');
+  const { currentUser } = initialState || {};
+
+  const initData = async () => {
+    try {
+      const res = await listMyAiInformationByPageUsingPOST(searchParams);
+      if (res.code === 0) {
+        console.log('获取内容:', res.data?.records);
+        setData(res?.data?.records ?? []);
+        setTotal(res?.data?.total ?? 0);
+      } else {
+        message.error('获取AI解答内容失败');
+      }
+    } catch (e: any) {
+      message.error('获取AI解答内容失败' + e.message);
+    }
+  };
+
+  /**
+   * 变化时执行此处
+   */
+  useEffect(() => {
+    initData();
+  }, [searchParams]);
+
+    /**
+     * 删除对话
+     * @param chartId
+     */
+    const handleDelete = (chartId: any) => {
+        Modal.confirm({
+            title: '确认删除',
+            icon: <ExclamationCircleOutlined />,
+            content: '确定要删除此对话吗？',
+            okText: '确认',
+            cancelText: '取消',
+            onOk: async () => {
+                try {
+                    const res = await deleteAiIntelligentUsingPOST({ id: chartId });
+                    console.log('res:', res.data);
+                    if (res.data) {
+                        message.success('删除成功');
+                        // 删除成功后重新加载AI对话数据
+                        initData();
+                    } else {
+                        message.error('删除失败');
+                    }
+                } catch (e: any) {
+                    message.error('删除失败' + e.message);
+                }
+            },
+        });
+    };
+
+  return (
+    <div className="my-chart-page">
+      <div className="margin-20">
+        <Search
+          placeholder="请输入搜索内容"
+          enterButton
+          onSearch={(value) => {
+            setSearchParams({
+              ...initParams,
+            });
+          }}
+        />
+      </div>
+
+      <List
+        pagination={{
+          // 设置分页
+          showTotal: () => `共 ${total} 条记录`,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          pageSizeOptions: ['10', '20', '30'],
+          onChange: (page, pageSize) => {
+            setSearchParams({
+              ...searchParams,
+              current: page,
+              pageSize,
+            });
+          },
+          current: searchParams.current,
+          pageSize: searchParams.pageSize,
+          total: total,
+        }}
+        dataSource={data}
+        renderItem={(item) => (
+          <List.Item key={item.id}>
+            <Card style={{ width: '100%' }}>
+              <List.Item.Meta
+                avatar={<Avatar src={currentUser?.userAvatar} />}
+                title={currentUser?.userName}
+              />
+              <>
+                    <p
+                      style={{
+                        textAlign: 'center',
+                        fontWeight: 'bold',
+                        color: 'black',
+                        fontSize: '16px',
+                      }}
+                    >
+                      {item.inputMessage}
+                    </p>
+
+                    <Divider style={{ fontWeight: 'bold', color: 'blue', fontSize: '16px' }}>
+                      AI解答
+                    </Divider>
+                    <div style={{ whiteSpace: 'pre-wrap', overflow: 'auto' }}>
+                      {item?.aiResult}
+                    </div>
+
+                    <Divider />
+                    <Row justify={'start'}>
+                      <Col style={{ color: 'black', fontWeight: 'bold' }}>
+                        {'AI解答时间：' + moment(item.createTime).format("YYYY-MM-DD HH:mm:ss")}
+                      </Col>
+                    </Row>
+                    <Row justify={'end'}>
+                      <Col>
+                          <Button danger onClick={() => handleDelete(item.id)}>
+                              删除
+                          </Button>
+                      </Col>
+                   </Row>
+              </>
+            </Card>
+          </List.Item>
+        )}
+      />
+    </div>
+  );
+};
+export default XunFeiAiChatManage;
