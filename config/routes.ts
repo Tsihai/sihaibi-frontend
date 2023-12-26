@@ -22,6 +22,7 @@
       { path: '/ai_question/xunfei_history', name: '讯飞 解答', icon: 'smile', component: './AiChatAssistant/XunFeiAiChatManage' },
     ],
   },
+  { path: '/add_image', name: '图片分析', icon: 'barChart', component: './Image' },
   {
     path: '/person',
     icon: 'UserOutlined',

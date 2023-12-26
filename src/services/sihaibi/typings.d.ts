@@ -142,6 +142,7 @@ declare namespace API {
     createTime?: string;
     id?: number;
     inputMessage?: string;
+    isDelete?: number;
     questionStatus?: string;
     updateTime?: string;
     userId?: number;
@@ -512,6 +513,11 @@ declare namespace API {
     map?: Record<string, any>;
     msg?: string;
     status?: number;
+  };
+
+  type uploadImageAnalysisUsingPOSTParams = {
+    biz?: string;
+    goal?: string;
   };
 
   type User = {
